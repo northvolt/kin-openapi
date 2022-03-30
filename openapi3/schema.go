@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"math/big"
 	"regexp"
@@ -1405,6 +1406,22 @@ func (schema *Schema) visitJSONObject(settings *schemaValidationSettings, value 
 				if p == nil {
 					return foundUnresolvedRef(propertyRef.Ref)
 				}
+
+				log.Printf("%s: %+v", k, p)
+				if p.AllOf != nil {
+					for _, any := range p.AllOf {
+						log.Printf("any ref: %+v", any.Ref)
+						log.Printf("any value: %+v", any.Value)
+					}
+
+					var err error
+					p, err = mergeAllOf(p.AllOf)
+					if err != nil {
+						return fmt.Errorf("error merging allOf at %s", k)
+					}
+					log.Printf("merged %s: %+v", k, p)
+				}
+
 				if err := p.visitJSON(settings, v); err != nil {
 					if settings.failfast {
 						return errSchema
